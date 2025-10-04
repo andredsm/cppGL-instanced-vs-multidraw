@@ -31,3 +31,6 @@ Thumbs.db
 
 # Executable
 OpenGLRenderer
+
+# Imgui file generated
+imgui.ini
