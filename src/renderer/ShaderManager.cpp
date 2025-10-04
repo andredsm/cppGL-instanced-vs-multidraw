@@ -1,5 +1,6 @@
 #include "ShaderManager.h"
-#include "../shaders/EmbeddedShaders.h"
+#include "shaders/basic_vertex.h"
+#include "shaders/basic_fragment.h"
 #include "../utils/ShaderLoader.h"
 
 #include <GL/glew.h>
@@ -34,9 +35,9 @@ bool ShaderManager::loadShaders(const std::string &vertexPath,
 
 bool ShaderManager::loadEmbeddedShaders() {
   GLuint vertexShader = ShaderLoader::loadShaderFromSource(
-      EmbeddedShaders::VERTEX_SHADER, GL_VERTEX_SHADER);
+      GeneratedShaders::BASIC_VERTEX_SHADER, GL_VERTEX_SHADER);
   GLuint fragmentShader = ShaderLoader::loadShaderFromSource(
-      EmbeddedShaders::FRAGMENT_SHADER, GL_FRAGMENT_SHADER);
+      GeneratedShaders::BASIC_FRAGMENT_SHADER, GL_FRAGMENT_SHADER);
 
   if (vertexShader == 0 || fragmentShader == 0) {
     std::cerr << "Failed to load embedded shaders" << std::endl;

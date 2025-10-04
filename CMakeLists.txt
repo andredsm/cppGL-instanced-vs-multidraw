@@ -8,6 +8,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # Include directories
 include_directories(include)
 include_directories(${CMAKE_BINARY_DIR}/imgui_backends)
+include_directories(${CMAKE_BINARY_DIR}/generated)
 
 # Find packages provided by Conan
 find_package(glfw3 REQUIRED)
@@ -38,6 +39,10 @@ list(APPEND SOURCES
 
 # Create the executable
 add_executable(OpenGLRenderer ${SOURCES})
+
+# Generate shader headers
+include(cmake/shader_stringify.cmake)
+add_shader_headers(OpenGLRenderer)
 
 # Link libraries using Conan targets
 target_link_libraries(OpenGLRenderer 
