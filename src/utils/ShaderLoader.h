@@ -7,9 +7,11 @@
 class ShaderLoader
 {
 public:
-    static GLuint loadShader(const std::string &filePath, GLenum shaderType);
+    static GLuint loadShader(const std::string& filePath, GLenum shaderType);
+
+    static GLuint loadShaderFromSource(const std::string& shaderSource, GLenum shaderType);
 
     static GLuint createProgram(GLuint vertexShader, GLuint fragmentShader);
 };
 
-#endif // SHADERLOADER_H
+#endif  // SHADERLOADER_H

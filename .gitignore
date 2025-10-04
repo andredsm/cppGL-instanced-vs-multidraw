@@ -14,11 +14,16 @@ CMakeFiles/
 cmake_install.cmake
 Makefile
 
-# IDE
-.vscode/
+# IDE (but keep clangd and VS Code settings)
 .idea/
 *.swp
 *.swo
+
+# Allow clangd configuration
+!.clangd
+!.clang-format
+!compile_commands.json
+!.vscode/settings.json
 
 # OS
 .DS_Store

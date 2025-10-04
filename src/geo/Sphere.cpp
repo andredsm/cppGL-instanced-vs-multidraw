@@ -40,10 +40,6 @@ SphereGeometry Sphere::generateSphere(int segments, float radius)
             vertex.ny = y;
             vertex.nz = z;
 
-            // Texture coordinates
-            vertex.u = s * S;
-            vertex.v = r * R;
-
             geometry.vertices.push_back(vertex);
         }
     }
@@ -74,7 +70,7 @@ SphereGeometry Sphere::generateSphere(int segments, float radius)
     return geometry;
 }
 
-void Sphere::_addVertex(std::vector<Vertex> &vertices, float x, float y, float z, float radius)
+void Sphere::_addVertex(std::vector<Vertex>& vertices, float x, float y, float z, float radius)
 {
     Vertex vertex;
     vertex.x = x * radius;
@@ -85,10 +81,6 @@ void Sphere::_addVertex(std::vector<Vertex> &vertices, float x, float y, float z
     vertex.nx = x;
     vertex.ny = y;
     vertex.nz = z;
-
-    // Calculate texture coordinates
-    vertex.u = atan2(x, z) / (2 * M_PI) + 0.5f;
-    vertex.v = asin(y) / M_PI + 0.5f;
 
     vertices.push_back(vertex);
 }

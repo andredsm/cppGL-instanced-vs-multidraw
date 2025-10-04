@@ -1,55 +1,37 @@
 #pragma once
 
-#include "../geo/Sphere.h"
-
-#include <glm/gtc/type_ptr.hpp>
-#include <vector>
+#include "../ui/UIManager.h"
+#include "GeometryRenderer.h"
+#include "InstanceManager.h"
+#include "OrbitCamera.h"
+#include "ShaderManager.h"
 
 // Forward declarations
 struct GLFWwindow;
-struct SphereGeometry;
 
-class Renderer
-{
+class Renderer {
 public:
-    Renderer();
-    ~Renderer();
-
-    bool init(GLFWwindow *window);
-    void render();
-    void cleanup();
+  bool init(GLFWwindow *window);
+  void render();
+  void cleanup();
+  void handleInput(double deltaTime);
+  void onWindowResize(int width, int height);
 
 private:
-    // Window reference
-    GLFWwindow *window;
+  // Window reference
+  GLFWwindow *_window = nullptr;
 
-    // Sphere geometry
-    SphereGeometry sphereGeometry;
-    unsigned int sphereVAO, sphereVBO, sphereEBO;
+  // Modular components
+  OrbitCamera _camera;
+  InstanceManager _instanceManager;
+  ShaderManager _shaderManager;
+  GeometryRenderer _geometryRenderer;
+  UIManager _uiManager;
 
-    // Instance data
-    unsigned int instanceVBO;
-    std::vector<glm::mat4> instanceMatrices;
-    int currentInstanceCount = 10000;
-    int maxInstanceCount = 100000; // Maximum supported instances
-
-    // Shader program
-    unsigned int shaderProgram;
-
-    // Camera matrices
-    glm::mat4 viewMatrix;
-    glm::mat4 projectionMatrix;
-
-    // UI state
-    bool showUI = true;
-    float sphereRadius = 0.02f;
-    int sphereSegments = 16;
-
-    // Helper methods
-    bool _setupSphereGeometry();
-    bool _setupInstanceData();
-    bool _loadShaders();
-    void _updateCamera();
-    void _updateInstanceData();
-    void _renderUI();
+  // Helper methods
+  bool _initializeComponents();
+  void _setupUICallbacks();
+  void _setupInputCallbacks();
+  void _handleInstanceCountChange(int count);
+  void _handleSphereParamsChange(float radius, int segments);
 };

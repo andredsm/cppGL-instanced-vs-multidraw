@@ -4,7 +4,7 @@
 #include <iostream>
 #include <sstream>
 
-GLuint ShaderLoader::loadShader(const std::string &filePath, GLenum shaderType)
+GLuint ShaderLoader::loadShader(const std::string& filePath, GLenum shaderType)
 {
     // Read shader file
     std::ifstream file(filePath);
@@ -18,9 +18,14 @@ GLuint ShaderLoader::loadShader(const std::string &filePath, GLenum shaderType)
     content << file.rdbuf();
     std::string source = content.str();
 
+    return loadShaderFromSource(source, shaderType);
+}
+
+GLuint ShaderLoader::loadShaderFromSource(const std::string& shaderSource, GLenum shaderType)
+{
     // Compile shader
     GLuint shader = glCreateShader(shaderType);
-    const char *src = source.c_str();
+    const char* src = shaderSource.c_str();
     glShaderSource(shader, 1, &src, nullptr);
     glCompileShader(shader);
 
@@ -31,7 +36,7 @@ GLuint ShaderLoader::loadShader(const std::string &filePath, GLenum shaderType)
     {
         GLchar infoLog[512];
         glGetShaderInfoLog(shader, sizeof(infoLog), nullptr, infoLog);
-        std::cerr << "Shader compilation error in " << filePath << ": " << infoLog << std::endl;
+        std::cerr << "Shader compilation error: " << infoLog << std::endl;
         glDeleteShader(shader);
         return 0;
     }

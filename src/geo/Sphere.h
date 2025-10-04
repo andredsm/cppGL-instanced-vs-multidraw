@@ -5,9 +5,8 @@
 
 struct Vertex
 {
-    float x, y, z;    // Position
-    float nx, ny, nz; // Normal
-    float u, v;       // Texture coordinates
+    float x, y, z;     // Position
+    float nx, ny, nz;  // Normal
 };
 
 struct SphereGeometry
@@ -24,7 +23,7 @@ public:
     static SphereGeometry generateSphere(int segments, float radius = 1.0f);
 
 private:
-    static void _addVertex(std::vector<Vertex> &vertices, float x, float y, float z, float radius);
+    static void _addVertex(std::vector<Vertex>& vertices, float x, float y, float z, float radius);
 };
 
-#endif // SPHERE_H
+#endif  // SPHERE_H

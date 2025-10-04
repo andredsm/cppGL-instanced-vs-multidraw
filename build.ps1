@@ -128,7 +128,8 @@ Write-Status "Configuring CMake..."
 try {
     cmake -B build `
         -DCMAKE_TOOLCHAIN_FILE=build/conan_toolchain.cmake `
-        -DCMAKE_BUILD_TYPE=$BuildType
+        -DCMAKE_BUILD_TYPE=$BuildType `
+        -G "MinGW Makefiles"
     
     if ($LASTEXITCODE -ne 0) {
         throw "CMake configuration failed"
@@ -158,7 +159,13 @@ Write-Host "==================================================" -ForegroundColor
 Write-Status "Build completed successfully!"
 Write-Host "==================================================" -ForegroundColor Cyan
 Write-Host ""
-Write-Host "To run the application:"
-Write-Host "  .\build\OpenGLRenderer.exe" -ForegroundColor Yellow
+Write-Host "To run the application:" -ForegroundColor Yellow
+Write-Host "  1. Open Command Prompt (cmd)" -ForegroundColor Gray
+Write-Host "  2. Navigate to: cd /d `"$PWD`"" -ForegroundColor Gray
+Write-Host "  3. Activate environment: build\conanrunenv-release-x86_64.bat" -ForegroundColor Gray
+Write-Host "  4. Run executable: build\OpenGLRenderer.exe" -ForegroundColor Gray
+Write-Host ""
+Write-Host "OR using PowerShell with Conan:" -ForegroundColor Yellow
+Write-Host "  cmd /c `"build\conanrunenv-release-x86_64.bat && build\OpenGLRenderer.exe`"" -ForegroundColor Gray
 Write-Host ""
 Write-Host "Build artifacts located in: .\build\" -ForegroundColor Gray
