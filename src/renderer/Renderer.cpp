@@ -1,18 +1,17 @@
 #include "Renderer.h"
 
+#include <iostream>
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
-#include <iostream>
 
-bool Renderer::init(GLFWwindow *win) {
+bool Renderer::init(GLFWwindow* win) {
   _window = win;
 
   // Initialize GLEW
   glewExperimental = GL_TRUE;
   GLenum err = glewInit();
   if (err != GLEW_OK) {
-    std::cerr << "Failed to initialize GLEW: " << glewGetErrorString(err)
-              << std::endl;
+    std::cerr << "Failed to initialize GLEW: " << glewGetErrorString(err) << std::endl;
     return false;
   }
 
@@ -20,7 +19,7 @@ bool Renderer::init(GLFWwindow *win) {
   glEnable(GL_DEPTH_TEST);
   glEnable(GL_CULL_FACE);
   glCullFace(GL_BACK);
-  
+
   // Get window size for initial viewport and camera setup
   int width, height;
   glfwGetFramebufferSize(_window, &width, &height);
@@ -76,7 +75,7 @@ bool Renderer::_initializeComponents() {
 
   // Bind instance data to geometry
   _geometryRenderer.bindInstanceData(_instanceManager);
-  
+
   // Set shader manager reference for multidraw rendering
   _geometryRenderer.setShaderManager(&_shaderManager);
 
@@ -96,19 +95,14 @@ bool Renderer::_initializeComponents() {
 }
 
 void Renderer::_setupUICallbacks() {
-  _uiManager.setInstanceCountCallback(
-      [this](int count) { _handleInstanceCountChange(count); });
+  _uiManager.setInstanceCountCallback([this](int count) { _handleInstanceCountChange(count); });
 
-  _uiManager.setSphereParamsCallback([this](float radius, int segments) {
-    _handleSphereParamsChange(radius, segments);
-  });
+  _uiManager.setSphereParamsCallback([this](float radius, int segments) { _handleSphereParamsChange(radius, segments); });
 
-  _uiManager.setRenderMethodCallback([this](RenderMethod method) {
-    _handleRenderMethodChange(method);
-  });
+  _uiManager.setRenderMethodCallback([this](RenderMethod method) { _handleRenderMethodChange(method); });
 
   // Initialize instance count to match UI state
-  const UIState &uiState = _uiManager.getUIState();
+  const UIState& uiState = _uiManager.getUIState();
   _handleInstanceCountChange(uiState.currentInstanceCount);
   _handleRenderMethodChange(uiState.renderMethod);
 }
@@ -123,14 +117,12 @@ void Renderer::_setupInputCallbacks() {
   // Set up scroll callback for camera zoom
   glfwSetWindowUserPointer(_window, this);
 
-  glfwSetScrollCallback(
-      _window, [](GLFWwindow *window, double xoffset, double yoffset) {
-        Renderer *renderer =
-            static_cast<Renderer *>(glfwGetWindowUserPointer(window));
-        if (renderer) {
-          renderer->_camera.handleScrollInput(yoffset);
-        }
-      });
+  glfwSetScrollCallback(_window, [](GLFWwindow* window, double xoffset, double yoffset) {
+    Renderer* renderer = static_cast<Renderer*>(glfwGetWindowUserPointer(window));
+    if (renderer) {
+      renderer->_camera.handleScrollInput(yoffset);
+    }
+  });
 }
 
 void Renderer::_handleInstanceCountChange(int count) {
@@ -139,8 +131,7 @@ void Renderer::_handleInstanceCountChange(int count) {
   _geometryRenderer.bindInstanceData(_instanceManager);
 
   // Update UI performance info
-  _uiManager.updatePerformanceInfo(_geometryRenderer.getSphereGeometry(),
-                                   count);
+  _uiManager.updatePerformanceInfo(_geometryRenderer.getSphereGeometry(), count);
 }
 
 void Renderer::_handleSphereParamsChange(float radius, int segments) {
@@ -149,8 +140,7 @@ void Renderer::_handleSphereParamsChange(float radius, int segments) {
   _geometryRenderer.bindInstanceData(_instanceManager);
 
   // Update UI performance info
-  _uiManager.updatePerformanceInfo(_geometryRenderer.getSphereGeometry(),
-                                   _instanceManager.getCurrentInstanceCount());
+  _uiManager.updatePerformanceInfo(_geometryRenderer.getSphereGeometry(), _instanceManager.getCurrentInstanceCount());
 }
 
 void Renderer::_handleRenderMethodChange(RenderMethod method) {
@@ -158,7 +148,6 @@ void Renderer::_handleRenderMethodChange(RenderMethod method) {
 }
 
 void Renderer::render() {
-
   // Clear screen completely
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -168,15 +157,18 @@ void Renderer::render() {
   // Get current render method from UI
   RenderMethod currentMethod = _uiManager.getUIState().renderMethod;
 
-  // Use appropriate shader program
-  _shaderManager.useProgram(currentMethod);
-
-  // Set uniforms
-  _shaderManager.setMatrix4("view", _camera.getViewMatrix());
-  _shaderManager.setMatrix4("projection", _camera.getProjectionMatrix());
-
   // Render geometry using the selected method
-  _geometryRenderer.render(_instanceManager.getCurrentInstanceCount(), &_instanceManager);
+  switch (currentMethod) {
+    case RenderMethod::INSTANCED:
+      _geometryRenderer.renderInstanced(_instanceManager, _camera);
+      break;
+    case RenderMethod::MULTIDRAW:
+      _geometryRenderer.renderMultiDraw(_instanceManager, _camera);
+      break;
+    case RenderMethod::MULTIDRAW_INDIRECT:
+      _geometryRenderer.renderMultiDrawIndirect(_instanceManager, _camera);
+      break;
+  }
 
   // Render UI
   _uiManager.render();

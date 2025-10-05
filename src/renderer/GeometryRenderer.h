@@ -7,6 +7,8 @@
 
 // Forward declarations
 class InstanceManager;
+class Camera;
+class ShaderManager;
 
 class GeometryRenderer {
 public:
@@ -21,31 +23,24 @@ public:
   bool setupSphereGeometry(float radius, int segments);
   void bindInstanceData(const InstanceManager& instanceManager);
 
-  // Rendering
-  void render(int instanceCount, const InstanceManager* instanceManager = nullptr) const;
-  void renderInstances(int instanceCount) const;
-  void renderMultiDraw(int instanceCount, const InstanceManager* instanceManager) const;
+  // Rendering methods
+  void renderInstanced(const InstanceManager& instanceManager, const Camera& camera);
+  void renderMultiDraw(const InstanceManager& instanceManager, const Camera& camera);
+  void renderMultiDrawIndirect(const InstanceManager& instanceManager, const Camera& camera);
 
-  // Set rendering method
-  void setRenderMethod(RenderMethod method) {
-    _renderMethod = method;
-  }
-
-  // Set shader manager reference for multidraw rendering
-  void setShaderManager(class ShaderManager* shaderManager) {
+  // Set shader manager reference
+  void setShaderManager(ShaderManager* shaderManager) {
     _shaderManager = shaderManager;
   }
-
-  // Setup VAO for different rendering methods
-  void setupRenderMethod();
 
   // Getters
   const SphereGeometry& getSphereGeometry() const {
     return _sphereGeometry;
   }
 
-  bool isInitialized() const {
-    return _sphereVAO != 0;
+  // Render method (placeholder for compatibility)
+  void setRenderMethod(RenderMethod method) {
+    // No longer needed since we call specific render methods directly
   }
 
 private:
@@ -53,18 +48,17 @@ private:
   SphereGeometry _sphereGeometry;
 
   // OpenGL objects
-  unsigned int _sphereVAO;
-  unsigned int _sphereVBO;
-  unsigned int _sphereEBO;
-  unsigned int _instanceSSBO;  // SSBO for instance matrices
+  GLuint _sphereVAO;
+  GLuint _sphereVBO;
+  GLuint _sphereEBO;
+  GLuint _instanceSSBO;    // SSBO for instance matrices
+  GLuint _indirectBuffer;  // Buffer for indirect draw commands
 
-  // Rendering method
-  RenderMethod _renderMethod = RenderMethod::INSTANCED;
-
-  // Reference to shader manager for multidraw rendering
-  class ShaderManager* _shaderManager = nullptr;
+  // Reference to shader manager
+  ShaderManager* _shaderManager = nullptr;
 
   // Helper methods
   void _setupVertexAttributes();
   void _setupInstanceSSBO(const InstanceManager& instanceManager);
+  void _setupIndirectBuffer(const InstanceManager& instanceManager);
 };

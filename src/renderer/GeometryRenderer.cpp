@@ -5,10 +5,11 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
+#include "Camera.h"
 #include "InstanceManager.h"
 #include "ShaderManager.h"
 
-GeometryRenderer::GeometryRenderer() : _sphereVAO(0), _sphereVBO(0), _sphereEBO(0), _instanceSSBO(0) {}
+GeometryRenderer::GeometryRenderer() : _sphereVAO(0), _sphereVBO(0), _sphereEBO(0), _instanceSSBO(0), _indirectBuffer(0) {}
 
 GeometryRenderer::~GeometryRenderer() {
   cleanup();
@@ -26,9 +27,10 @@ bool GeometryRenderer::initialize() {
   glGenBuffers(1, &_sphereVBO);
   glGenBuffers(1, &_sphereEBO);
   glGenBuffers(1, &_instanceSSBO);
+  glGenBuffers(1, &_indirectBuffer);
 
-  if (_sphereVBO == 0 || _sphereEBO == 0 || _instanceSSBO == 0) {
-    std::cerr << "Failed to generate VBO/EBO/SSBO" << std::endl;
+  if (_sphereVBO == 0 || _sphereEBO == 0 || _instanceSSBO == 0 || _indirectBuffer == 0) {
+    std::cerr << "Failed to generate VBO/EBO/SSBO/IndirectBuffer" << std::endl;
     cleanup();
     return false;
   }
@@ -52,6 +54,10 @@ void GeometryRenderer::cleanup() {
   if (_instanceSSBO != 0) {
     glDeleteBuffers(1, &_instanceSSBO);
     _instanceSSBO = 0;
+  }
+  if (_indirectBuffer != 0) {
+    glDeleteBuffers(1, &_indirectBuffer);
+    _indirectBuffer = 0;
   }
 }
 
@@ -84,55 +90,10 @@ bool GeometryRenderer::setupSphereGeometry(float radius, int segments) {
 }
 
 void GeometryRenderer::bindInstanceData(const InstanceManager& instanceManager) {
-  if (_sphereVAO == 0) {
-    std::cerr << "GeometryRenderer not initialized" << std::endl;
-    return;
-  }
-
   // Setup SSBO with instance data
   _setupInstanceSSBO(instanceManager);
 }
 
-void GeometryRenderer::render(int instanceCount, const InstanceManager* instanceManager) const {
-  switch (_renderMethod) {
-    case RenderMethod::INSTANCED:
-      renderInstances(instanceCount);
-      break;
-    case RenderMethod::MULTIDRAW:
-      renderMultiDraw(instanceCount, instanceManager);
-      break;
-  }
-}
-
-void GeometryRenderer::renderInstances(int instanceCount) const {
-  if (_sphereVAO == 0 || instanceCount <= 0) {
-    return;
-  }
-
-  glBindVertexArray(_sphereVAO);
-  glDrawElementsInstanced(GL_TRIANGLES, _sphereGeometry.indexCount, GL_UNSIGNED_INT, 0, instanceCount);
-  glBindVertexArray(0);
-}
-
-void GeometryRenderer::renderMultiDraw(int instanceCount, const InstanceManager* instanceManager) const {
-  if (_sphereVAO == 0 || instanceCount <= 0 || !instanceManager) {
-    return;
-  }
-
-  // Bind the VAO and render with glMultiDrawElements
-  // Each draw call will use gl_DrawID to index into the SSBO
-  glBindVertexArray(_sphereVAO);
-
-  // Create arrays for multidraw - each draw uses the same geometry but different matrix from SSBO
-  std::vector<GLsizei> counts(instanceCount, _sphereGeometry.indexCount);
-  std::vector<const void*> indices(instanceCount, 0);  // All use same index buffer
-
-  // Render all spheres in one multidraw call
-  // gl_DrawID will be 0, 1, 2, ... for each draw call
-  glMultiDrawElements(GL_TRIANGLES, counts.data(), GL_UNSIGNED_INT, indices.data(), instanceCount);
-
-  glBindVertexArray(0);
-}
 void GeometryRenderer::_setupVertexAttributes() {
   // Position (location 0)
   glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)0);
@@ -154,4 +115,102 @@ void GeometryRenderer::_setupInstanceSSBO(const InstanceManager& instanceManager
   glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, _instanceSSBO);
 
   glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+}
+
+void GeometryRenderer::renderMultiDrawIndirect(const InstanceManager& instanceManager, const Camera& camera) {
+  int instanceCount = instanceManager.getCurrentInstanceCount();
+  if (instanceCount <= 0)
+    return;
+
+  _setupIndirectBuffer(instanceManager);
+
+  unsigned int shaderProgram = _shaderManager->getProgram(RenderMethod::INSTANCED);
+  glUseProgram(shaderProgram);
+
+  // Set uniforms
+  _shaderManager->setMatrix4("view", camera.getViewMatrix());
+  _shaderManager->setMatrix4("projection", camera.getProjectionMatrix());
+
+  // Bind vertex array and SSBO
+  glBindVertexArray(_sphereVAO);
+
+  // Bind indirect buffer and execute multidraw indirect
+  glBindBuffer(GL_DRAW_INDIRECT_BUFFER, _indirectBuffer);
+
+  glMultiDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, nullptr, 1, 0);
+
+  glBindVertexArray(0);
+  glBindBuffer(GL_DRAW_INDIRECT_BUFFER, 0);
+}
+
+void GeometryRenderer::renderInstanced(const InstanceManager& instanceManager, const Camera& camera) {
+  int instanceCount = instanceManager.getCurrentInstanceCount();
+  if (instanceCount <= 0)
+    return;
+
+  unsigned int shaderProgram = _shaderManager->getProgram(RenderMethod::INSTANCED);
+  glUseProgram(shaderProgram);
+
+  // Set uniforms
+  _shaderManager->setMatrix4("view", camera.getViewMatrix());
+  _shaderManager->setMatrix4("projection", camera.getProjectionMatrix());
+
+  // Bind vertex array and SSBO
+  glBindVertexArray(_sphereVAO);
+
+  // Render instances
+  glDrawElementsInstanced(GL_TRIANGLES, _sphereGeometry.indexCount, GL_UNSIGNED_INT, 0, instanceCount);
+
+  glBindVertexArray(0);
+}
+
+void GeometryRenderer::renderMultiDraw(const InstanceManager& instanceManager, const Camera& camera) {
+  int instanceCount = instanceManager.getCurrentInstanceCount();
+  if (instanceCount <= 0)
+    return;
+
+  unsigned int shaderProgram = _shaderManager->getProgram(RenderMethod::MULTIDRAW);
+  glUseProgram(shaderProgram);
+
+  // Set uniforms
+  _shaderManager->setMatrix4("view", camera.getViewMatrix());
+  _shaderManager->setMatrix4("projection", camera.getProjectionMatrix());
+
+  // Bind vertex array and SSBO
+  glBindVertexArray(_sphereVAO);
+
+  // Create arrays for multidraw - each draw uses the same geometry but different matrix from SSBO
+  std::vector<GLsizei> counts(instanceCount, _sphereGeometry.indexCount);
+  std::vector<const void*> indices(instanceCount, 0);  // All use same index buffer
+
+  // Render all spheres in one multidraw call
+  glMultiDrawElements(GL_TRIANGLES, counts.data(), GL_UNSIGNED_INT, indices.data(), instanceCount);
+
+  glBindVertexArray(0);
+}
+
+void GeometryRenderer::_setupIndirectBuffer(const InstanceManager& instanceManager) {
+  int instanceCount = instanceManager.getCurrentInstanceCount();
+
+  // Create draw command structure for each instance
+  struct DrawElementsIndirectCommand {
+    GLuint count;          // Number of elements to draw
+    GLuint instanceCount;  // Number of instances (1 per command)
+    GLuint firstIndex;     // Offset into index buffer
+    GLuint baseVertex;     // Offset into vertex buffer
+    GLuint baseInstance;   // Base instance for gl_InstanceID
+  };
+
+  std::vector<DrawElementsIndirectCommand> commands(1);
+
+  commands[0].count = static_cast<GLuint>(_sphereGeometry.indexCount);
+  commands[0].instanceCount = instanceCount;
+  commands[0].firstIndex = 0;
+  commands[0].baseVertex = 0;
+  commands[0].baseInstance = 0;
+
+  // Upload commands to indirect buffer
+  glBindBuffer(GL_DRAW_INDIRECT_BUFFER, _indirectBuffer);
+  glBufferData(GL_DRAW_INDIRECT_BUFFER, commands.size() * sizeof(DrawElementsIndirectCommand), commands.data(), GL_DYNAMIC_DRAW);
+  glBindBuffer(GL_DRAW_INDIRECT_BUFFER, 0);
 }
