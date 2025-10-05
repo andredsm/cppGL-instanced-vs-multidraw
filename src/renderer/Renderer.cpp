@@ -50,6 +50,12 @@ bool Renderer::_initializeComponents() {
     return false;
   }
 
+  // Load multidraw shaders
+  if (!_shaderManager.loadMultiDrawShaders()) {
+    std::cerr << "Failed to load multidraw shaders" << std::endl;
+    return false;
+  }
+
   // Initialize geometry renderer
   if (!_geometryRenderer.initialize()) {
     std::cerr << "Failed to initialize geometry renderer" << std::endl;
@@ -70,6 +76,9 @@ bool Renderer::_initializeComponents() {
 
   // Bind instance data to geometry
   _geometryRenderer.bindInstanceData(_instanceManager);
+  
+  // Set shader manager reference for multidraw rendering
+  _geometryRenderer.setShaderManager(&_shaderManager);
 
   // Initialize UI manager
   if (!_uiManager.initialize(_window)) {
@@ -94,9 +103,14 @@ void Renderer::_setupUICallbacks() {
     _handleSphereParamsChange(radius, segments);
   });
 
+  _uiManager.setRenderMethodCallback([this](RenderMethod method) {
+    _handleRenderMethodChange(method);
+  });
+
   // Initialize instance count to match UI state
   const UIState &uiState = _uiManager.getUIState();
   _handleInstanceCountChange(uiState.currentInstanceCount);
+  _handleRenderMethodChange(uiState.renderMethod);
 }
 
 void Renderer::handleInput(double deltaTime) {
@@ -139,6 +153,10 @@ void Renderer::_handleSphereParamsChange(float radius, int segments) {
                                    _instanceManager.getCurrentInstanceCount());
 }
 
+void Renderer::_handleRenderMethodChange(RenderMethod method) {
+  _geometryRenderer.setRenderMethod(method);
+}
+
 void Renderer::render() {
 
   // Clear screen completely
@@ -147,15 +165,18 @@ void Renderer::render() {
   // Start UI frame
   _uiManager.newFrame();
 
-  // Use shader program
-  _shaderManager.useProgram();
+  // Get current render method from UI
+  RenderMethod currentMethod = _uiManager.getUIState().renderMethod;
+
+  // Use appropriate shader program
+  _shaderManager.useProgram(currentMethod);
 
   // Set uniforms
   _shaderManager.setMatrix4("view", _camera.getViewMatrix());
   _shaderManager.setMatrix4("projection", _camera.getProjectionMatrix());
 
-  // Render geometry instances
-  _geometryRenderer.renderInstances(_instanceManager.getCurrentInstanceCount());
+  // Render geometry using the selected method
+  _geometryRenderer.render(_instanceManager.getCurrentInstanceCount(), &_instanceManager);
 
   // Render UI
   _uiManager.render();

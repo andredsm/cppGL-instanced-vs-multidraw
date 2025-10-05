@@ -1,6 +1,7 @@
 #pragma once
 
 #include <functional>
+#include "../renderer/RenderMethod.h"
 
 // Forward declarations
 struct GLFWwindow;
@@ -9,6 +10,7 @@ struct SphereGeometry;
 // UI callback types
 using InstanceCountCallback = std::function<void(int)>;
 using SphereParamsCallback = std::function<void(float radius, int segments)>;
+using RenderMethodCallback = std::function<void(RenderMethod)>;
 
 struct UIState
 {
@@ -17,6 +19,7 @@ struct UIState
     int maxInstanceCount = 100000;
     float sphereRadius = 0.02f;
     int sphereSegments = 16;
+    RenderMethod renderMethod = RenderMethod::INSTANCED;
 
     // Performance info
     unsigned int vertexCount = 0;
@@ -55,6 +58,10 @@ public:
     {
         _onSphereParamsChanged = callback;
     }
+    void setRenderMethodCallback(RenderMethodCallback callback)
+    {
+        _onRenderMethodChanged = callback;
+    }
 
     // Update performance info
     void updatePerformanceInfo(const SphereGeometry& geometry, int instanceCount);
@@ -66,6 +73,7 @@ private:
     // Callbacks
     InstanceCountCallback _onInstanceCountChanged;
     SphereParamsCallback _onSphereParamsChanged;
+    RenderMethodCallback _onRenderMethodChanged;
 
     // Helper methods
     void _renderControlPanel();

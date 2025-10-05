@@ -4,6 +4,7 @@
 #include "GeometryRenderer.h"
 #include "InstanceManager.h"
 #include "OrbitCamera.h"
+#include "RenderMethod.h"
 #include "ShaderManager.h"
 
 // Forward declarations
@@ -34,4 +35,5 @@ private:
   void _setupInputCallbacks();
   void _handleInstanceCountChange(int count);
   void _handleSphereParamsChange(float radius, int segments);
+  void _handleRenderMethodChange(RenderMethod method);
 };

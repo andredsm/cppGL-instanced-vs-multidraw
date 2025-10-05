@@ -1,30 +1,30 @@
-#include "renderer/Renderer.h"
-#include <GL/glew.h>
-#include <GLFW/glfw3.h>
 #include <iomanip>
 #include <iostream>
 #include <sstream>
 #include <string>
+#include <GL/glew.h>
+#include <GLFW/glfw3.h>
+#include "renderer/Renderer.h"
 
 // Global variables for window resize handling
 static int g_windowWidth = 800;
 static int g_windowHeight = 600;
 static Renderer* g_renderer = nullptr;
 
-static void glfw_error_callback(int error, const char *description) {
+static void glfw_error_callback(int error, const char* description) {
   fprintf(stderr, "GLFW Error %d: %s\n", error, description);
 }
 
 static void window_resize_callback(GLFWwindow* window, int width, int height) {
   g_windowWidth = width;
   g_windowHeight = height;
-  
+
   // Update viewport
   glViewport(0, 0, width, height);
-  
+
   // Debug output
   std::cout << "Window resized to: " << width << "x" << height << std::endl;
-  
+
   // Update renderer with new dimensions
   if (g_renderer) {
     g_renderer->onWindowResize(width, height);
@@ -32,11 +32,10 @@ static void window_resize_callback(GLFWwindow* window, int width, int height) {
 }
 
 int main() {
-  glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-  glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
+  glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+  glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
   glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
   glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-  glfwWindowHint(GLFW_MAXIMIZED, GLFW_TRUE);
 
   glfwSetErrorCallback(glfw_error_callback);
 
@@ -47,8 +46,7 @@ int main() {
   }
 
   // Create a windowed mode window and its OpenGL context
-  GLFWwindow *window =
-      glfwCreateWindow(800, 600, "OpenGL Renderer", nullptr, nullptr);
+  GLFWwindow* window = glfwCreateWindow(800, 600, "OpenGL Renderer", nullptr, nullptr);
 
   if (!window) {
     std::cerr << "Failed to create GLFW window" << std::endl;
@@ -68,6 +66,13 @@ int main() {
     std::cerr << "Failed to initialize GLEW" << std::endl;
     return -1;
   }
+
+  // Display OpenGL version information
+  std::cout << "=== OpenGL Information ===" << std::endl;
+  std::cout << "OpenGL Version: " << glGetString(GL_VERSION) << std::endl;
+  std::cout << "OpenGL Vendor: " << glGetString(GL_VENDOR) << std::endl;
+  std::cout << "OpenGL Renderer: " << glGetString(GL_RENDERER) << std::endl;
+  std::cout << "GLSL Version: " << glGetString(GL_SHADING_LANGUAGE_VERSION) << std::endl;
 
   // Create the renderer
   Renderer renderer;
@@ -103,8 +108,7 @@ int main() {
 
       // Update window title with FPS
       std::ostringstream title;
-      title << "OpenGL Renderer - FPS: " << std::fixed << std::setprecision(1)
-            << fps;
+      title << "OpenGL Renderer - FPS: " << std::fixed << std::setprecision(1) << fps;
       glfwSetWindowTitle(window, title.str().c_str());
     }
 

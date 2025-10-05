@@ -15,10 +15,10 @@ uniform mat4 view;
 uniform mat4 projection;
 
 void main() {
-  // Get instance matrix using gl_InstanceID
-  mat4 modelMatrix = instanceMatrix[gl_InstanceID];
+  // Get instance matrix using gl_DrawID for multidraw rendering
+  mat4 modelMatrix = instanceMatrix[gl_DrawID];
 
-  // Transform position
+  // Transform position using matrix from SSBO
   vec4 worldPos = modelMatrix * vec4(position, 1.0);
   gl_Position = projection * view * worldPos;
 

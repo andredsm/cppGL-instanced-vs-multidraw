@@ -66,6 +66,21 @@ void UIManager::_renderControlPanel()
 {
     ImGui::Begin("Sphere Renderer Controls", &_uiState.showUI);
 
+    // Rendering method selection
+    RenderMethod oldRenderMethod = _uiState.renderMethod;
+    int currentMethodIndex = static_cast<int>(_uiState.renderMethod);
+    
+    if (ImGui::Combo("Rendering Method", &currentMethodIndex, RENDER_METHOD_NAMES, 2))
+    {
+        _uiState.renderMethod = static_cast<RenderMethod>(currentMethodIndex);
+        if (_uiState.renderMethod != oldRenderMethod && _onRenderMethodChanged)
+        {
+            _onRenderMethodChanged(_uiState.renderMethod);
+        }
+    }
+
+    ImGui::Separator();
+
     // Instance count control
     int oldInstanceCount = _uiState.currentInstanceCount;
     ImGui::SliderInt("Instance Count", &_uiState.currentInstanceCount, 1, _uiState.maxInstanceCount);
